@@ -7,30 +7,25 @@ use App\Models\Transaction;
 use App\Models\TransactionItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class CashierController extends Controller
 {
-    /**
-     * Display the cashier page.
-     *
-     * @return \Illuminate\View\View
-     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         $products = Product::orderBy('name')->get();
         $transactions = Transaction::with('items.product')
                                   ->orderBy('created_at', 'desc')
                                   ->get();
-                          
+
         return view('cashier.index', compact('products', 'transactions'));
     }
 
-    /**
-     * Store a newly created transaction.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -49,7 +44,7 @@ class CashierController extends Controller
         }
 
         DB::beginTransaction();
-        
+
         try {
             $transaction = Transaction::create([
                 'customer_name' => $request->customer_name,
@@ -57,11 +52,12 @@ class CashierController extends Controller
                 'subtotal' => $request->subtotal,
                 'tax' => $request->tax,
                 'total_amount' => $request->total_amount,
+                'user_id' => Auth::id(),
             ]);
-            
+
             foreach ($request->items as $item) {
                 $product = Product::findOrFail($item['product_id']);
-                
+
                 TransactionItem::create([
                     'transaction_id' => $transaction->id,
                     'product_id' => $product->id,
@@ -70,18 +66,21 @@ class CashierController extends Controller
                     'subtotal' => $product->price * $item['quantity'],
                 ]);
             }
-            
+
             DB::commit();
-            
+
+            $transaction->load('items.product');
+            $transaction->user_name = Auth::user()->name;
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Transaksi berhasil disimpan',
-                'transaction' => $transaction->load('items.product'),
+                'transaction' => $transaction,
             ]);
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Transaksi gagal: ' . $e->getMessage(),
@@ -89,32 +88,22 @@ class CashierController extends Controller
         }
     }
 
-    /**
-     * Get all products.
-     * 
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function getProducts()
     {
         $products = Product::orderBy('name')->get();
-        
+
         return response()->json([
             'status' => 'success',
             'data' => $products,
         ]);
     }
 
-    /**
-     * Get transaction history.
-     * 
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function getTransactions()
     {
         $transactions = Transaction::with('items.product')
                                   ->orderBy('created_at', 'desc')
                                   ->get();
-                                  
+
         return response()->json([
             'status' => 'success',
             'data' => $transactions,

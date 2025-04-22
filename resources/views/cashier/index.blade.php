@@ -17,13 +17,30 @@
                 </svg>
                 <h1 class="text-2xl font-bold text-white">Shei's Mart</h1>
             </div>
-            <div class="text-white">
-                <div class="text-sm">Sistem Kasir</div>
-                <div class="text-xs opacity-75">{{ date('d F Y') }}</div>
+            <div class="flex items-center">
+                <div class="text-white mr-4">
+                    <div class="text-sm">Sistem Kasir</div>
+                    <div class="text-xs opacity-75">{{ date('d F Y') }}</div>
+                </div>
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="text-white flex items-center focus:outline-none">
+                        <span class="mr-2">{{ Auth::user()->name }}</span>
+                        <svg class="h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
-
     <main class="container mx-auto py-6 px-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
@@ -35,7 +52,7 @@
                         <input type="text" id="customer" x-model="customerName" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Masukkan nama pembeli">
                     </div>
                     
-                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                    <div class="flex flex-col md:flex-row md:items-end md:space-x-4 w-full">
                         <div class="flex flex-col w-full md:w-1/2">
                             <label for="product" class="block text-sm font-medium text-gray-700 mb-1">Pilih Produk</label>
                             <select id="product" x-model="productId"
@@ -46,25 +63,22 @@
                                         x-text="product.name + ' - ' + formatRupiah(product.price)"></option>
                                 </template>
                             </select>
-                            <p class="text-xs text-gray-500 mt-1 italic">
-                                *Jika daftar produk tidak ada, jalankan <code class="bg-gray-100 px-1 py-0.5 rounded">php artisan db:seed --class=ProductSeeder</code>
-                            </p>
                         </div>
-
-                        <div class="flex flex-col w-full md:w-1/4">
+                        <div class="flex flex-col w-full md:w-1/5">
                             <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
                             <input type="number" id="quantity" x-model="quantity" min="1"
                                 class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
                         </div>
-
-                        <div class="flex items-end w-full md:w-1/4">
+                        <div class="flex flex-col w-full md:w-1/4">
                             <button @click="addToCart"
                                 class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
                                 Tambah ke Keranjang
                             </button>
                         </div>
                     </div>
-                    
+                    <p class="text-xs text-gray-500 mt-1 italic">
+                        *Jika daftar produk tidak ada, jalankan <code class="bg-gray-100 px-1 py-0.5 rounded">php artisan db:seed --class=ProductSeeder</code>
+                    </p>
                     <div class="mt-6">
                         <h3 class="text-lg font-medium text-gray-800 mb-2">Keranjang Belanja</h3>
                         <div class="border rounded-md overflow-hidden">
